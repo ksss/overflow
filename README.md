@@ -5,17 +5,19 @@ Overflow is a class to overflow calculated as C language in Ruby.
 ## Usage
 
 ```ruby
+require 'overflow'
+
 def murmur_hash str
   data = str.dup.unpack("C*")
   m = 0x5bd1e995
   r = 16
-  length = Overflow.new "C"
+  length = Overflow.new "C" # "C" mean 32bit unsigned char (same as pack template)
   length.set str.bytesize
   h = length * m
 
   while 4 <= length
     d = data.shift(4).pack("C*").unpack("I")[0]
-    h += d
+    h += d # calculate not need `& 0xffffffff`
     h *= m
     h ^= h >> r
     length -= 4

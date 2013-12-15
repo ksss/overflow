@@ -125,42 +125,6 @@ overflow_to_i(VALUE self)
 	}
 }
 
-#define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
-
-static uint64_t
-minus(types type, uint64_t a, uint64_t b)
-{
-	switch (type) {
-	case i8:   return TYPE_MINUS(int8_t, a, b);
-	case ui8:  return TYPE_MINUS(uint8_t, a, b);
-	case i16:  return TYPE_MINUS(int16_t, a, b);
-	case ui16: return TYPE_MINUS(uint16_t, a, b);
-	case i32:  return TYPE_MINUS(int32_t, a, b);
-	case ui32: return TYPE_MINUS(uint32_t, a, b);
-	case i64:  return TYPE_MINUS(int64_t, a, b);
-	case ui64: return TYPE_MINUS(uint64_t, a, b);
-	}
-}
-
-static VALUE
-overflow_minus(VALUE self, VALUE num)
-{
-	overflow_t *ptr;
-	Data_Get_Struct(self, overflow_t, ptr);
-
-	uint64_t a;
-	uint64_t b;
-
-	if (RB_TYPE_P(num, T_BIGNUM)) {
-		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	}
-	a = ptr->value;
-	b = NUM2ULL(num);
-
-	ptr->value = minus(ptr->type, a, b);
-	return self;
-}
-
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
 
 static uint64_t
@@ -194,6 +158,42 @@ overflow_plus(VALUE self, VALUE num)
 	b = NUM2ULL(num);
 
 	ptr->value = plus(ptr->type, a, b);
+	return self;
+}
+
+#define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
+
+static uint64_t
+minus(types type, uint64_t a, uint64_t b)
+{
+	switch (type) {
+	case i8:   return TYPE_MINUS(int8_t, a, b);
+	case ui8:  return TYPE_MINUS(uint8_t, a, b);
+	case i16:  return TYPE_MINUS(int16_t, a, b);
+	case ui16: return TYPE_MINUS(uint16_t, a, b);
+	case i32:  return TYPE_MINUS(int32_t, a, b);
+	case ui32: return TYPE_MINUS(uint32_t, a, b);
+	case i64:  return TYPE_MINUS(int64_t, a, b);
+	case ui64: return TYPE_MINUS(uint64_t, a, b);
+	}
+}
+
+static VALUE
+overflow_minus(VALUE self, VALUE num)
+{
+	overflow_t *ptr;
+	Data_Get_Struct(self, overflow_t, ptr);
+
+	uint64_t a;
+	uint64_t b;
+
+	if (RB_TYPE_P(num, T_BIGNUM)) {
+		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
+	}
+	a = ptr->value;
+	b = NUM2ULL(num);
+
+	ptr->value = minus(ptr->type, a, b);
 	return self;
 }
 
