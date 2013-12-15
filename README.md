@@ -11,7 +11,7 @@ def murmur_hash str
   data = str.dup.unpack("C*")
   m = 0x5bd1e995
   r = 16
-  length = Overflow.new "C" # "C" mean 32bit unsigned char (same as pack template)
+  length = Overflow.new "C" # "C" mean 8bit unsigned char (same as pack template)
   length.set str.bytesize
   h = length * m
 
