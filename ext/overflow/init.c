@@ -105,23 +105,17 @@ overflow_to_i(VALUE self)
 	Data_Get_Struct(self, overflow_t, ptr);
 
 	switch (ptr->type) {
-	case i8:
-		return INT2NUM((int8_t)ptr->value);
-	case ui8:
-		return UINT2NUM((uint8_t)ptr->value);
-	case i16:
-		return INT2NUM((int16_t)ptr->value);
-	case ui16:
-		return UINT2NUM((uint16_t)ptr->value);
-	case i32:
-		return LONG2NUM((int32_t)ptr->value);
-	case ui32:
-		return ULONG2NUM((uint32_t)ptr->value);
-	case i64:
-		return LL2NUM((int64_t)ptr->value);
-	case ui64:
-		return ULL2NUM((uint64_t)ptr->value);
+	case i8:   return INT2NUM((int8_t)ptr->value);
+	case ui8:  return UINT2NUM((uint8_t)ptr->value);
+	case i16:  return INT2NUM((int16_t)ptr->value);
+	case ui16: return UINT2NUM((uint16_t)ptr->value);
+	case i32:  return LONG2NUM((int32_t)ptr->value);
+	case ui32: return ULONG2NUM((uint32_t)ptr->value);
+	case i64:  return LL2NUM((int64_t)ptr->value);
+	case ui64: return ULL2NUM((uint64_t)ptr->value);
 	}
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return Qnil;
 }
 
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
@@ -139,6 +133,8 @@ plus(types type, uint64_t a, uint64_t b)
 	case i64:  return TYPE_PLUS(int64_t, a, b);
 	case ui64: return TYPE_PLUS(uint64_t, a, b);
 	}
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return Qnil;
 }
 
 static VALUE
@@ -175,6 +171,8 @@ minus(types type, uint64_t a, uint64_t b)
 	case i64:  return TYPE_MINUS(int64_t, a, b);
 	case ui64: return TYPE_MINUS(uint64_t, a, b);
 	}
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return 0;
 }
 
 static VALUE
@@ -212,6 +210,8 @@ mul(types type, uint64_t a, uint64_t b)
 	case i64:  return TYPE_MUL(int64_t, a, b);
 	case ui64: return TYPE_MUL(uint64_t, a, b);
 	}
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return 0;
 }
 
 static VALUE
@@ -247,6 +247,8 @@ lshift(overflow_t *ptr, long width)
 	case i64:  return LONG2NUM((int64_t)(ptr->value << width));
 	case ui64: return ULONG2NUM((uint64_t)(ptr->value << width));
 	}
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return Qnil;
 }
 
 static VALUE
@@ -262,6 +264,8 @@ rshift(overflow_t *ptr, long width)
 	case i64:  return LONG2NUM((int64_t)(ptr->value >> width));
 	case ui64: return ULONG2NUM((uint64_t)(ptr->value >> width));
 	}
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return Qnil;
 }
 
 static VALUE
