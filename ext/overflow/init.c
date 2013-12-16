@@ -67,6 +67,24 @@ overflow_initialize(VALUE self, VALUE obj)
 }
 
 static VALUE
+overflow_initialize_copy(VALUE copy, VALUE origin)
+{
+	overflow_t *ptr_copy, *ptr_origin;
+
+	if (copy == origin) return copy;
+
+	rb_check_frozen(copy);
+
+	Data_Get_Struct(copy, overflow_t, ptr_copy);
+	Data_Get_Struct(origin, overflow_t, ptr_origin);
+
+	ptr_copy->value = ptr_origin->value;
+	ptr_copy->type  = ptr_origin->type;
+
+	return copy;
+}
+
+static VALUE
 overflow_set(VALUE self, VALUE obj)
 {
 	VALUE other;
@@ -234,80 +252,80 @@ overflow_mul(VALUE self, VALUE num)
 	return self;
 }
 
-static VALUE
+static void
 lshift(overflow_t *ptr, long width)
 {
 	switch (ptr->type) {
-	case i8:   return INT2NUM((int8_t)(ptr->value << width));
-	case ui8:  return UINT2NUM((uint8_t)(ptr->value << width));
-	case i16:  return INT2NUM((int16_t)(ptr->value << width));
-	case ui16: return UINT2NUM((uint16_t)(ptr->value << width));
-	case i32:  return LONG2NUM((int32_t)(ptr->value << width));
-	case ui32: return ULONG2NUM((uint32_t)(ptr->value << width));
-	case i64:  return LONG2NUM((int64_t)(ptr->value << width));
-	case ui64: return ULONG2NUM((uint64_t)(ptr->value << width));
+	case i8:   ptr->value = (int8_t)(ptr->value << width); break;
+	case ui8:  ptr->value = (uint8_t)(ptr->value << width); break;
+	case i16:  ptr->value = (int16_t)(ptr->value << width); break;
+	case ui16: ptr->value = (uint16_t)(ptr->value << width); break;
+	case i32:  ptr->value = (int32_t)(ptr->value << width); break;
+	case ui32: ptr->value = (uint32_t)(ptr->value << width); break;
+	case i64:  ptr->value = (int64_t)(ptr->value << width); break;
+	case ui64: ptr->value = (uint64_t)(ptr->value << width); break;
 	}
-	rb_raise(rb_eRuntimeError, "undefined type seted");
-	return Qnil;
 }
 
-static VALUE
+static void
 rshift(overflow_t *ptr, long width)
 {
 	switch (ptr->type) {
-	case i8:   return INT2NUM((int8_t)(ptr->value >> width));
-	case ui8:  return UINT2NUM((uint8_t)(ptr->value >> width));
-	case i16:  return INT2NUM((int16_t)(ptr->value >> width));
-	case ui16: return UINT2NUM((uint16_t)(ptr->value >> width));
-	case i32:  return LONG2NUM((int32_t)(ptr->value >> width));
-	case ui32: return ULONG2NUM((uint32_t)(ptr->value >> width));
-	case i64:  return LONG2NUM((int64_t)(ptr->value >> width));
-	case ui64: return ULONG2NUM((uint64_t)(ptr->value >> width));
+	case i8:   ptr->value = (int8_t)(ptr->value >> width); break;
+	case ui8:  ptr->value = (uint8_t)(ptr->value >> width); break;
+	case i16:  ptr->value = (int16_t)(ptr->value >> width); break;
+	case ui16: ptr->value = (uint16_t)(ptr->value >> width); break;
+	case i32:  ptr->value = (int32_t)(ptr->value >> width); break;
+	case ui32: ptr->value = (uint32_t)(ptr->value >> width); break;
+	case i64:  ptr->value = (int64_t)(ptr->value >> width); break;
+	case ui64: ptr->value = (uint64_t)(ptr->value >> width); break;
 	}
-	rb_raise(rb_eRuntimeError, "undefined type seted");
-	return Qnil;
 }
 
 static VALUE
 overflow_lshift(VALUE self, VALUE obj)
 {
+	VALUE clone = rb_obj_clone(self);
 	long width;
 	overflow_t *ptr;
-	Data_Get_Struct(self, overflow_t, ptr);
+	Data_Get_Struct(clone, overflow_t, ptr);
 
 	if (!FIXNUM_P(obj))
 		rb_raise(rb_eArgError, "over 64 left shift not support");
-	
+
 	width = FIX2LONG(obj);
 	if (64 <= width)
 		rb_raise(rb_eArgError, "over 64 left shift not support");
 
 	if (width < 0) {
-		return rshift(ptr, -width);
+		rshift(ptr, -width);
 	} else {
-		return lshift(ptr, width);
+		lshift(ptr, width);
 	}
+	return clone;
 }
 
 static VALUE
 overflow_rshift(VALUE self, VALUE obj)
 {
+	VALUE clone = rb_obj_clone(self);
 	long width;
 	overflow_t *ptr;
-	Data_Get_Struct(self, overflow_t, ptr);
+	Data_Get_Struct(clone, overflow_t, ptr);
 
 	if (!FIXNUM_P(obj))
 		rb_raise(rb_eArgError, "over 64 right shift not support");
-	
+
 	width = FIX2LONG(obj);
 	if (64 <= width)
 		rb_raise(rb_eArgError, "over 64 right shift not support");
 
 	if (width < 0) {
-		return lshift(ptr, -width);
+		lshift(ptr, -width);
 	} else {
-		return rshift(ptr, width);
+		rshift(ptr, width);
 	}
+	return clone;
 }
 
 void
@@ -317,6 +335,7 @@ Init_overflow(void)
 	cOverflow = rb_define_class("Overflow", rb_cObject);
 	rb_define_alloc_func(cOverflow, overflow_alloc);
 	rb_define_method(cOverflow, "initialize", overflow_initialize, 1);
+	rb_define_method(cOverflow, "initialize_copy", overflow_initialize_copy, 1);
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
 	rb_define_method(cOverflow, "+", overflow_plus, 1);

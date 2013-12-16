@@ -51,6 +51,13 @@ describe Overflow do
     expect(over.set(ULLONG_MAX + 2).to_i).to eq(1)
   end
 
+  it "<<" do
+    over = Overflow.new "c"
+    over.set(1)
+    expect(over << 1).to be_a_kind_of(Overflow)
+    expect(over.to_i).to eq(1)
+  end
+
   it "<< 8bit" do
     over = Overflow.new "c"
     over.set(CHAR_MAX)
@@ -97,6 +104,13 @@ describe Overflow do
     over.set(ULLONG_MAX)
     over = over << 63
     expect(over.to_i).to eq(LLONG_MAX + 1)
+  end
+
+  it ">>" do
+    over = Overflow.new "c"
+    over.set(1)
+    expect(over >> 1).to be_a_kind_of(Overflow)
+    expect(over.to_i).to eq(1)
   end
 
   it ">> 8bit" do
