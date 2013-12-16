@@ -54,7 +54,6 @@ overflow_initialize(VALUE self, VALUE obj)
 {
 	overflow_t *ptr;
 	char *p;
-	char c;
 
 	if (rb_type(obj) != T_STRING) {
 		rb_raise(rb_eArgError, "set a type char for `pack' template");
@@ -70,9 +69,9 @@ overflow_initialize(VALUE self, VALUE obj)
 static VALUE
 overflow_set(VALUE self, VALUE obj)
 {
+	VALUE other;
 	overflow_t *ptr;
 	Data_Get_Struct(self, overflow_t, ptr);
-	VALUE other;
 
 	switch (rb_type(obj)) {
 	case T_FIXNUM:
@@ -145,15 +144,15 @@ plus(types type, uint64_t a, uint64_t b)
 static VALUE
 overflow_plus(VALUE self, VALUE num)
 {
+	uint64_t a, b;
 	overflow_t *ptr;
-	Data_Get_Struct(self, overflow_t, ptr);
 
-	uint64_t a;
-	uint64_t b;
+	Data_Get_Struct(self, overflow_t, ptr);
 
 	if (RB_TYPE_P(num, T_BIGNUM)) {
 		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
 	}
+
 	a = ptr->value;
 	b = NUM2ULL(num);
 
@@ -181,15 +180,16 @@ minus(types type, uint64_t a, uint64_t b)
 static VALUE
 overflow_minus(VALUE self, VALUE num)
 {
-	overflow_t *ptr;
-	Data_Get_Struct(self, overflow_t, ptr);
-
 	uint64_t a;
 	uint64_t b;
+	overflow_t *ptr;
+
+	Data_Get_Struct(self, overflow_t, ptr);
 
 	if (RB_TYPE_P(num, T_BIGNUM)) {
 		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
 	}
+
 	a = ptr->value;
 	b = NUM2ULL(num);
 
@@ -217,11 +217,11 @@ mul(types type, uint64_t a, uint64_t b)
 static VALUE
 overflow_mul(VALUE self, VALUE num)
 {
-	overflow_t *ptr;
-	Data_Get_Struct(self, overflow_t, ptr);
-
 	uint64_t a;
 	uint64_t b;
+	overflow_t *ptr;
+
+	Data_Get_Struct(self, overflow_t, ptr);
 
 	if (RB_TYPE_P(num, T_BIGNUM)) {
 		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
