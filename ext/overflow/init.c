@@ -160,8 +160,9 @@ overflow_plus(VALUE self, VALUE num)
 {
 	uint64_t a, b;
 	overflow_t *ptr;
+	VALUE clone = rb_obj_clone(self);
 
-	Data_Get_Struct(self, overflow_t, ptr);
+	Data_Get_Struct(clone, overflow_t, ptr);
 
 	if (RB_TYPE_P(num, T_BIGNUM)) {
 		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
@@ -171,7 +172,7 @@ overflow_plus(VALUE self, VALUE num)
 	b = NUM2ULL(num);
 
 	ptr->value = plus(ptr->type, a, b);
-	return self;
+	return clone;
 }
 
 #define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
@@ -196,11 +197,11 @@ minus(types type, uint64_t a, uint64_t b)
 static VALUE
 overflow_minus(VALUE self, VALUE num)
 {
-	uint64_t a;
-	uint64_t b;
+	uint64_t a, b;
 	overflow_t *ptr;
+	VALUE clone = rb_obj_clone(self);
 
-	Data_Get_Struct(self, overflow_t, ptr);
+	Data_Get_Struct(clone, overflow_t, ptr);
 
 	if (RB_TYPE_P(num, T_BIGNUM)) {
 		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
@@ -210,7 +211,7 @@ overflow_minus(VALUE self, VALUE num)
 	b = NUM2ULL(num);
 
 	ptr->value = minus(ptr->type, a, b);
-	return self;
+	return clone;
 }
 
 #define TYPE_MUL(type, value, other) ((type)((type)(value) * (type)(other)))
@@ -238,8 +239,9 @@ overflow_mul(VALUE self, VALUE num)
 	uint64_t a;
 	uint64_t b;
 	overflow_t *ptr;
+	VALUE clone = rb_obj_clone(self);
 
-	Data_Get_Struct(self, overflow_t, ptr);
+	Data_Get_Struct(clone, overflow_t, ptr);
 
 	if (RB_TYPE_P(num, T_BIGNUM)) {
 		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
@@ -249,7 +251,7 @@ overflow_mul(VALUE self, VALUE num)
 	b = NUM2ULL(num);
 
 	ptr->value = mul(ptr->type, a, b);
-	return self;
+	return clone;
 }
 
 static void

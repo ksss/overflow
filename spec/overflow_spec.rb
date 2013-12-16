@@ -1,22 +1,6 @@
 require 'spec_helper'
 
 describe Overflow do
-  CHAR_MAX   = 0x7f
-  CHAR_MIN   = -0x80
-  UCHAR_MAX  = 0xff
-
-  SHRT_MAX   = 0x7fff
-  SHRT_MIN   = -0x8000
-  USHRT_MAX  = 0xffff
-
-  INT_MAX    = 0x7fffffff
-  INT_MIN    = -0x80000000
-  UINT_MAX   = 0xffffffff
-
-  LLONG_MAX  = 0x7fffffffffffffff
-  LLONG_MIN  = -0x8000000000000000
-  ULLONG_MAX = 0xffffffffffffffff
-
   it "initialize" do
     %w{c C s S i I l L q Q}.each do |i|
       Overflow.new i
@@ -161,6 +145,14 @@ describe Overflow do
     expect(over.to_i).to eq(1)
   end
 
+  it "+" do
+    over = Overflow.new "c"
+    over.set 1
+    clone = over.clone
+    expect(over + 1).to be_a_kind_of(Overflow)
+    expect(over.to_i).to eq(clone.to_i)
+  end
+
   it "+ 8bit" do
     over = Overflow.new "c"
     over.set(CHAR_MAX)
@@ -209,6 +201,14 @@ describe Overflow do
     expect(over.to_i).to eq(0)
   end
 
+  it "-" do
+    over = Overflow.new "c"
+    over.set 1
+    clone = over.clone
+    expect(over - 1).to be_a_kind_of(Overflow)
+    expect(over.to_i).to eq(clone.to_i)
+  end
+
   it "- 8bit" do
     over = Overflow.new "c"
     over.set(CHAR_MIN)
@@ -255,6 +255,14 @@ describe Overflow do
     over.set(0)
     over -= 1
     expect(over.to_i).to eq(ULLONG_MAX)
+  end
+
+  it "*" do
+    over = Overflow.new "c"
+    over.set 1
+    clone = over.clone
+    expect(over * 2).to be_a_kind_of(Overflow)
+    expect(over.to_i).to eq(clone.to_i)
   end
 
   it "* 8bit" do
@@ -320,8 +328,4 @@ describe Overflow do
     over *= ULLONG_MAX
     expect(over.to_i).to eq(1)
   end
-
 end
-
-
-
