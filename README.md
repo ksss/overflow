@@ -1,5 +1,8 @@
 # Overflow
 
+[![Gem Version](https://badge.fury.io/rb/overflow.png)](http://badge.fury.io/rb/overflow)
+[![Build Status](https://travis-ci.org/ksss/overflow.png?branch=master)](https://travis-ci.org/ksss/overflow)
+
 Overflow is a class to overflow calculated as C language in Ruby.
 
 ## Usage
