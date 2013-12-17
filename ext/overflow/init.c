@@ -11,10 +11,8 @@ typedef enum {
 	ui64
 } types;
 
-typedef uint64_t value_t;
-
 typedef struct {
-	value_t value;
+	uint64_t value;
 	types type;
 } overflow_t;
 
@@ -84,6 +82,19 @@ overflow_initialize_copy(VALUE copy, VALUE origin)
 	return copy;
 }
 
+#define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
+	switch (ptr->type) { \
+	case i8:   ptr->value = (int8_t)   callback; break; \
+	case ui8:  ptr->value = (uint8_t)  callback; break; \
+	case i16:  ptr->value = (int16_t)  callback; break; \
+	case ui16: ptr->value = (uint16_t) callback; break; \
+	case i32:  ptr->value = (int32_t)  callback; break; \
+	case ui32: ptr->value = (uint32_t) callback; break; \
+	case i64:  ptr->value = (int64_t)  callback; break; \
+	case ui64: ptr->value = (uint64_t) callback; break; \
+	} \
+} while(0)
+
 static VALUE
 overflow_set(VALUE self, VALUE obj)
 {
@@ -93,16 +104,7 @@ overflow_set(VALUE self, VALUE obj)
 
 	switch (rb_type(obj)) {
 	case T_FIXNUM:
-		switch (ptr->type) {
-		case i8:   ptr->value = (int8_t)   NUM2LL(obj); break;
-		case ui8:  ptr->value = (uint8_t)  NUM2LL(obj); break;
-		case i16:  ptr->value = (int16_t)  NUM2LL(obj); break;
-		case ui16: ptr->value = (uint16_t) NUM2LL(obj); break;
-		case i32:  ptr->value = (int32_t)  NUM2LL(obj); break;
-		case ui32: ptr->value = (uint32_t) NUM2LL(obj); break;
-		case i64:  ptr->value = (int64_t)  NUM2LL(obj); break;
-		case ui64: ptr->value = (uint64_t) NUM2LL(obj); break;
-		}
+		OVERFLOW_TYPES_ALL_CASE(ptr, NUM2LL(obj));
 		break;
 	case T_BIGNUM:
 		if (RBIGNUM_POSITIVE_P(obj)) {
@@ -136,21 +138,25 @@ overflow_to_i(VALUE self)
 	return Qnil;
 }
 
+#define OVERFLOW_TYPES_MULTI_MACRO(type, macro) do { \
+	switch (type) { \
+	case i8:   return macro(int8_t, a, b); \
+	case ui8:  return macro(uint8_t, a, b); \
+	case i16:  return macro(int16_t, a, b); \
+	case ui16: return macro(uint16_t, a, b); \
+	case i32:  return macro(int32_t, a, b); \
+	case ui32: return macro(uint32_t, a, b); \
+	case i64:  return macro(int64_t, a, b); \
+	case ui64: return macro(uint64_t, a, b); \
+	} \
+} while(0)
+
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
 
 static uint64_t
 plus(types type, uint64_t a, uint64_t b)
 {
-	switch (type) {
-	case i8:   return TYPE_PLUS(int8_t, a, b);
-	case ui8:  return TYPE_PLUS(uint8_t, a, b);
-	case i16:  return TYPE_PLUS(int16_t, a, b);
-	case ui16: return TYPE_PLUS(uint16_t, a, b);
-	case i32:  return TYPE_PLUS(int32_t, a, b);
-	case ui32: return TYPE_PLUS(uint32_t, a, b);
-	case i64:  return TYPE_PLUS(int64_t, a, b);
-	case ui64: return TYPE_PLUS(uint64_t, a, b);
-	}
+	OVERFLOW_TYPES_MULTI_MACRO(type, TYPE_PLUS);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return Qnil;
 }
@@ -180,16 +186,7 @@ overflow_plus(VALUE self, VALUE num)
 static uint64_t
 minus(types type, uint64_t a, uint64_t b)
 {
-	switch (type) {
-	case i8:   return TYPE_MINUS(int8_t, a, b);
-	case ui8:  return TYPE_MINUS(uint8_t, a, b);
-	case i16:  return TYPE_MINUS(int16_t, a, b);
-	case ui16: return TYPE_MINUS(uint16_t, a, b);
-	case i32:  return TYPE_MINUS(int32_t, a, b);
-	case ui32: return TYPE_MINUS(uint32_t, a, b);
-	case i64:  return TYPE_MINUS(int64_t, a, b);
-	case ui64: return TYPE_MINUS(uint64_t, a, b);
-	}
+	OVERFLOW_TYPES_MULTI_MACRO(type, TYPE_MINUS);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return 0;
 }
@@ -219,16 +216,7 @@ overflow_minus(VALUE self, VALUE num)
 static uint64_t
 mul(types type, uint64_t a, uint64_t b)
 {
-	switch (type) {
-	case i8:   return TYPE_MUL(int8_t, a, b);
-	case ui8:  return TYPE_MUL(uint8_t, a, b);
-	case i16:  return TYPE_MUL(int16_t, a, b);
-	case ui16: return TYPE_MUL(uint16_t, a, b);
-	case i32:  return TYPE_MUL(int32_t, a, b);
-	case ui32: return TYPE_MUL(uint32_t, a, b);
-	case i64:  return TYPE_MUL(int64_t, a, b);
-	case ui64: return TYPE_MUL(uint64_t, a, b);
-	}
+	OVERFLOW_TYPES_MULTI_MACRO(type, TYPE_MUL);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return 0;
 }
@@ -257,31 +245,13 @@ overflow_mul(VALUE self, VALUE num)
 static void
 lshift(overflow_t *ptr, long width)
 {
-	switch (ptr->type) {
-	case i8:   ptr->value = (int8_t)(ptr->value << width); break;
-	case ui8:  ptr->value = (uint8_t)(ptr->value << width); break;
-	case i16:  ptr->value = (int16_t)(ptr->value << width); break;
-	case ui16: ptr->value = (uint16_t)(ptr->value << width); break;
-	case i32:  ptr->value = (int32_t)(ptr->value << width); break;
-	case ui32: ptr->value = (uint32_t)(ptr->value << width); break;
-	case i64:  ptr->value = (int64_t)(ptr->value << width); break;
-	case ui64: ptr->value = (uint64_t)(ptr->value << width); break;
-	}
+	OVERFLOW_TYPES_ALL_CASE(ptr, (ptr->value << width));
 }
 
 static void
 rshift(overflow_t *ptr, long width)
 {
-	switch (ptr->type) {
-	case i8:   ptr->value = (int8_t)(ptr->value >> width); break;
-	case ui8:  ptr->value = (uint8_t)(ptr->value >> width); break;
-	case i16:  ptr->value = (int16_t)(ptr->value >> width); break;
-	case ui16: ptr->value = (uint16_t)(ptr->value >> width); break;
-	case i32:  ptr->value = (int32_t)(ptr->value >> width); break;
-	case ui32: ptr->value = (uint32_t)(ptr->value >> width); break;
-	case i64:  ptr->value = (int64_t)(ptr->value >> width); break;
-	case ui64: ptr->value = (uint64_t)(ptr->value >> width); break;
-	}
+	OVERFLOW_TYPES_ALL_CASE(ptr, (ptr->value >> width));
 }
 
 static VALUE
