@@ -142,6 +142,7 @@ describe Overflow do
     clone = over.clone
     expect(over + 1).to be_a_kind_of(Overflow)
     expect(over.to_i).to eq(clone.to_i)
+    expect((over + clone).to_i).to eq(2)
   end
 
   it "+ 8bit" do
@@ -189,6 +190,7 @@ describe Overflow do
     clone = over.clone
     expect(over - 1).to be_a_kind_of(Overflow)
     expect(over.to_i).to eq(clone.to_i)
+    expect((over - clone).to_i).to eq(0)
   end
 
   it "- 8bit" do
@@ -236,6 +238,7 @@ describe Overflow do
     clone = over.clone
     expect(over * 2).to be_a_kind_of(Overflow)
     expect(over.to_i).to eq(clone.to_i)
+    expect((over * clone).to_i).to eq(1)
   end
 
   it "* 8bit" do
@@ -303,28 +306,34 @@ describe Overflow do
 
   it "&" do
     over = Overflow.new "C", 0xaa
+    clone = over.clone
     a = over & 0x99
     expect(over.to_i).to eq(0xaa)
     expect(a.to_i).to eq(0x88)
     over &= 0xffffffffffffffffff
     expect(over.to_i).to eq(0xaa)
+    expect((over & clone).to_i).to eq(0xaa)
   end
 
   it "|" do
     over = Overflow.new "C", 0xaa
+    clone = over.clone
     a = over | 0x99
     expect(over.to_i).to eq(0xaa)
     expect(a.to_i).to eq(0xbb)
     over |= 0xffffffffffffffffff
     expect(over.to_i).to eq(0xff)
+    expect((over | clone).to_i).to eq(0xff)
   end
 
   it "^" do
     over = Overflow.new "C", 0xaa
+    clone = over.clone
     a = over ^ 0x99
     expect(over.to_i).to eq(0xaa)
     expect(a.to_i).to eq(0x33)
     over ^= 0xffffffffffffffffff
     expect(over.to_i).to eq(0x55)
+    expect((over ^ clone).to_i).to eq(0xff)
   end
 end

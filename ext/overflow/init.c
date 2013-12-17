@@ -157,6 +157,18 @@ overflow_to_i(VALUE self)
 	} \
 } while(0)
 
+static inline VALUE
+pre_arithmetic(VALUE num)
+{
+	if (RB_TYPE_P(num, T_FIXNUM)) {
+		return num;
+	} else if (RB_TYPE_P(num, T_BIGNUM)) {
+		return rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
+	} else { // self or other object
+		return rb_funcall(num, rb_intern("to_i"), 0);
+	}
+}
+
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
 
 static uint64_t
@@ -176,12 +188,8 @@ overflow_plus(VALUE self, VALUE num)
 
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	if (RB_TYPE_P(num, T_BIGNUM)) {
-		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	}
-
 	a = ptr->value;
-	b = NUM2ULL(num);
+	b = NUM2ULL(pre_arithmetic(num));
 
 	ptr->value = plus(ptr->type, a, b);
 	return clone;
@@ -206,12 +214,8 @@ overflow_minus(VALUE self, VALUE num)
 
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	if (RB_TYPE_P(num, T_BIGNUM)) {
-		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	}
-
 	a = ptr->value;
-	b = NUM2ULL(num);
+	b = NUM2ULL(pre_arithmetic(num));
 
 	ptr->value = minus(ptr->type, a, b);
 	return clone;
@@ -237,12 +241,8 @@ overflow_mul(VALUE self, VALUE num)
 
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	if (RB_TYPE_P(num, T_BIGNUM)) {
-		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	}
-
 	a = ptr->value;
-	b = NUM2ULL(num);
+	b = NUM2ULL(pre_arithmetic(num));
 
 	ptr->value = mul(ptr->type, a, b);
 	return clone;
@@ -266,10 +266,7 @@ overflow_and(VALUE self, VALUE num)
 	overflow_t *ptr;
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	if (RB_TYPE_P(num, T_BIGNUM)) {
-		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	}
-	ptr->value = ptr->value & NUM2ULL(num);
+	ptr->value = ptr->value & NUM2ULL(pre_arithmetic(num));
 	return clone;
 }
 
@@ -280,10 +277,7 @@ overflow_or(VALUE self, VALUE num)
 	overflow_t *ptr;
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	if (RB_TYPE_P(num, T_BIGNUM)) {
-		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	}
-	ptr->value = ptr->value | NUM2ULL(num);
+	ptr->value = ptr->value | NUM2ULL(pre_arithmetic(num));
 	return clone;
 }
 
@@ -294,10 +288,7 @@ overflow_xor(VALUE self, VALUE num)
 	overflow_t *ptr;
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	if (RB_TYPE_P(num, T_BIGNUM)) {
-		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	}
-	ptr->value = ptr->value ^ NUM2ULL(num);
+	ptr->value = ptr->value ^ NUM2ULL(pre_arithmetic(num));
 	return clone;
 }
 
