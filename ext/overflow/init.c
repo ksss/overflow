@@ -144,7 +144,7 @@ overflow_to_i(VALUE self)
 	return Qnil;
 }
 
-#define OVERFLOW_TYPES_MULTI_MACRO(type, macro) do { \
+#define OVERFLOW_TYPES_MULTI_MACRO(type, macro, a, b) do { \
 	switch (type) { \
 	case i8:   return macro(int8_t, a, b); \
 	case ui8:  return macro(uint8_t, a, b); \
@@ -172,9 +172,9 @@ pre_arithmetic(VALUE num)
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
 
 static uint64_t
-plus(types type, uint64_t a, uint64_t b)
+plus(overflow_t *ptr, uint64_t b)
 {
-	OVERFLOW_TYPES_MULTI_MACRO(type, TYPE_PLUS);
+	OVERFLOW_TYPES_MULTI_MACRO(ptr->type, TYPE_PLUS, ptr->value, b);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return Qnil;
 }
@@ -182,25 +182,24 @@ plus(types type, uint64_t a, uint64_t b)
 static VALUE
 overflow_plus(VALUE self, VALUE num)
 {
-	uint64_t a, b;
+	uint64_t b;
 	overflow_t *ptr;
 	VALUE clone = rb_obj_clone(self);
 
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	a = ptr->value;
 	b = NUM2ULL(pre_arithmetic(num));
 
-	ptr->value = plus(ptr->type, a, b);
+	ptr->value = plus(ptr, b);
 	return clone;
 }
 
 #define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
 
 static uint64_t
-minus(types type, uint64_t a, uint64_t b)
+minus(overflow_t *ptr, uint64_t b)
 {
-	OVERFLOW_TYPES_MULTI_MACRO(type, TYPE_MINUS);
+	OVERFLOW_TYPES_MULTI_MACRO(ptr->type, TYPE_MINUS, ptr->value, b);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return 0;
 }
@@ -208,25 +207,24 @@ minus(types type, uint64_t a, uint64_t b)
 static VALUE
 overflow_minus(VALUE self, VALUE num)
 {
-	uint64_t a, b;
+	uint64_t b;
 	overflow_t *ptr;
 	VALUE clone = rb_obj_clone(self);
 
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	a = ptr->value;
 	b = NUM2ULL(pre_arithmetic(num));
 
-	ptr->value = minus(ptr->type, a, b);
+	ptr->value = minus(ptr, b);
 	return clone;
 }
 
 #define TYPE_MUL(type, value, other) ((type)((type)(value) * (type)(other)))
 
 static uint64_t
-mul(types type, uint64_t a, uint64_t b)
+mul(overflow_t *ptr, uint64_t b)
 {
-	OVERFLOW_TYPES_MULTI_MACRO(type, TYPE_MUL);
+	OVERFLOW_TYPES_MULTI_MACRO(ptr->type, TYPE_MUL, ptr->value, b);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return 0;
 }
@@ -234,17 +232,15 @@ mul(types type, uint64_t a, uint64_t b)
 static VALUE
 overflow_mul(VALUE self, VALUE num)
 {
-	uint64_t a;
 	uint64_t b;
 	overflow_t *ptr;
 	VALUE clone = rb_obj_clone(self);
 
 	Data_Get_Struct(clone, overflow_t, ptr);
 
-	a = ptr->value;
 	b = NUM2ULL(pre_arithmetic(num));
 
-	ptr->value = mul(ptr->type, a, b);
+	ptr->value = mul(ptr, b);
 	return clone;
 }
 
