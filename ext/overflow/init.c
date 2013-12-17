@@ -16,6 +16,8 @@ typedef struct {
 	types type;
 } overflow_t;
 
+static VALUE overflow_set(VALUE self, VALUE obj);
+
 types char2type (char c)
 {
 	switch (c) {
@@ -48,12 +50,13 @@ overflow_alloc(VALUE self)
 }
 
 static VALUE
-overflow_initialize(VALUE self, VALUE obj)
+overflow_initialize(int argc, VALUE *argv, VALUE self)
 {
 	overflow_t *ptr;
 	char *p;
+	VALUE obj = argv[0];
 
-	if (rb_type(obj) != T_STRING) {
+	if (argc < 1 || rb_type(obj) != T_STRING) {
 		rb_raise(rb_eArgError, "set a type char for `pack' template");
 	}
 
@@ -61,6 +64,9 @@ overflow_initialize(VALUE self, VALUE obj)
 	p = RSTRING_PTR(obj);
 
 	ptr->type = char2type(*p);
+	if (1 < argc) {
+		overflow_set(self, argv[1]);
+	}
 	return self;
 }
 
@@ -306,7 +312,7 @@ Init_overflow(void)
 	VALUE cOverflow;
 	cOverflow = rb_define_class("Overflow", rb_cObject);
 	rb_define_alloc_func(cOverflow, overflow_alloc);
-	rb_define_method(cOverflow, "initialize", overflow_initialize, 1);
+	rb_define_method(cOverflow, "initialize", overflow_initialize, -1);
 	rb_define_method(cOverflow, "initialize_copy", overflow_initialize_copy, 1);
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
