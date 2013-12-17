@@ -293,4 +293,38 @@ describe Overflow do
     over *= ULLONG_MAX
     expect(over.to_i).to eq(1)
   end
+
+  it "~" do
+    over = Overflow.new "C", 0xaa
+    rev = ~over
+    expect(over.to_i).to eq(0xaa)
+    expect(rev.to_i).to eq(0x55)
+  end
+
+  it "&" do
+    over = Overflow.new "C", 0xaa
+    a = over & 0x99
+    expect(over.to_i).to eq(0xaa)
+    expect(a.to_i).to eq(0x88)
+    over &= 0xffffffffffffffffff
+    expect(over.to_i).to eq(0xaa)
+  end
+
+  it "|" do
+    over = Overflow.new "C", 0xaa
+    a = over | 0x99
+    expect(over.to_i).to eq(0xaa)
+    expect(a.to_i).to eq(0xbb)
+    over |= 0xffffffffffffffffff
+    expect(over.to_i).to eq(0xff)
+  end
+
+  it "^" do
+    over = Overflow.new "C", 0xaa
+    a = over ^ 0x99
+    expect(over.to_i).to eq(0xaa)
+    expect(a.to_i).to eq(0x33)
+    over ^= 0xffffffffffffffffff
+    expect(over.to_i).to eq(0x55)
+  end
 end

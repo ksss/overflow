@@ -11,48 +11,72 @@ Overflow is a class to overflow calculated as C language in Ruby.
 require 'overflow'
 
 over = Overflow.new "C" #=> "C" mean 8bit unsigned char (same as pack template)
-over.set 255 #=> set a number
+over.set 255 #=> set a number (0b11111111)
 p over.to_i #=> 255 (out Fixnum object)
-over << 4 #=> left bit shift
+over = over << 4 #=> left bit shift (0b11110000)
 p over.to_i #=> 240 (overflow bit is dropped)
+p (over >> 4).to_i #=> 15 (0b00001111)
+```
 
-def murmur_hash str
-  data = str.dup.unpack("C*")
-  m = 0x5bd1e995
-  r = 16
-  length = Overflow.new "C"
-  length.set str.bytesize
-  h = length * m # calculate not need `& 0xffffffff`
+## APIs
 
-  while 4 <= length
-    d = data.shift(4).pack("C*").unpack("I")[0]
-    h += d
-    h *= m
-    h ^= h >> r
-    length -= 4
-  end
+### initialize(type[, number])
 
-  if 2 < length
-    h += (data[2] << 16) & 0xffffffff
-  end
-  if 1 < length
-    h += (data[1] << 8) & 0xffffffff
-  end
-  if 0 < length
-    h += data[0]
-    h *= m
-    h ^= h >> r
-  end
+**type**: defined C type
 
-  h *= m
-  h ^= h >> 10
-  h *= m
-  h ^= h >> 17
+- c: `int8_t`
+- C: `uint8_t`
+- s: `int16_t`
+- S: `uint16_t`
+- i: `int32_t`
+- I: `uint32_t`
+- l: `int32_t` same at "i"
+- L: `uint32_t` same at "I"
+- q: `int64_t`
+- Q: `uint64_t`
 
-  h.to_i
-end
+### set(number)
 
-p murmur_hash "overflow" #=> 1245224547
+```ruby
+over = Overflow.new "C"
+over.set 1
+p over.to_i #=> 1
+over.set 10
+p over.to_i #=> 10
+```
+
+### to\_i
+
+```ruby
+over = Overflow.new "C", 256
+over.to_i #=> 0
+```
+
+### +, -, \*
+
+```ruby
+over = Overflow.new "C", 100
+over += 200 #=> 44
+over -= 50  #=> 250
+over *= 10  #=> 196
+```
+
+###  ~, &, |, ^
+
+```ruby
+over = Overflow.new "C", 0xaa
+~over #=> 0x55
+over & 0x99 #=> 0x88
+over | 0x99 #=> 0xbb
+over ^ 0x99 #=> 0x33
+```
+
+### \<\<, \>\>
+
+```ruby
+over = Overflow.new "C", 0xff
+over << 4 #=> 0xf0
+over >> 4 #=> 0x0f
 ```
 
 ## Installation

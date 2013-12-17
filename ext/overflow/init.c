@@ -248,6 +248,59 @@ overflow_mul(VALUE self, VALUE num)
 	return clone;
 }
 
+static VALUE
+overflow_rev(VALUE self)
+{
+	VALUE clone = rb_obj_clone(self);
+	overflow_t *ptr;
+	Data_Get_Struct(clone, overflow_t, ptr);
+
+	ptr->value = ~ptr->value;
+	return clone;
+}
+
+static VALUE
+overflow_and(VALUE self, VALUE num)
+{
+	VALUE clone = rb_obj_clone(self);
+	overflow_t *ptr;
+	Data_Get_Struct(clone, overflow_t, ptr);
+
+	if (RB_TYPE_P(num, T_BIGNUM)) {
+		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
+	}
+	ptr->value = ptr->value & NUM2ULL(num);
+	return clone;
+}
+
+static VALUE
+overflow_or(VALUE self, VALUE num)
+{
+	VALUE clone = rb_obj_clone(self);
+	overflow_t *ptr;
+	Data_Get_Struct(clone, overflow_t, ptr);
+
+	if (RB_TYPE_P(num, T_BIGNUM)) {
+		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
+	}
+	ptr->value = ptr->value | NUM2ULL(num);
+	return clone;
+}
+
+static VALUE
+overflow_xor(VALUE self, VALUE num)
+{
+	VALUE clone = rb_obj_clone(self);
+	overflow_t *ptr;
+	Data_Get_Struct(clone, overflow_t, ptr);
+
+	if (RB_TYPE_P(num, T_BIGNUM)) {
+		num = rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
+	}
+	ptr->value = ptr->value ^ NUM2ULL(num);
+	return clone;
+}
+
 static void
 lshift(overflow_t *ptr, long width)
 {
@@ -319,6 +372,12 @@ Init_overflow(void)
 	rb_define_method(cOverflow, "+", overflow_plus, 1);
 	rb_define_method(cOverflow, "-", overflow_minus, 1);
 	rb_define_method(cOverflow, "*", overflow_mul, 1);
+
+	rb_define_method(cOverflow, "~", overflow_rev, 0);
+	rb_define_method(cOverflow, "&", overflow_and, 1);
+	rb_define_method(cOverflow, "|", overflow_or, 1);
+	rb_define_method(cOverflow, "^", overflow_xor, 1);
+
 	rb_define_method(cOverflow, "<<", overflow_lshift, 1);
 	rb_define_method(cOverflow, ">>", overflow_rshift, 1);
 }
