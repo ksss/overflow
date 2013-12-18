@@ -17,6 +17,7 @@ typedef struct {
 } overflow_t;
 
 static VALUE overflow_set(VALUE self, VALUE obj);
+static VALUE overflow_to_i(VALUE self);
 
 types char2type (char c)
 {
@@ -87,6 +88,35 @@ overflow_initialize_copy(VALUE copy, VALUE origin)
 	ptr_copy->type  = ptr_origin->type;
 
 	return copy;
+}
+
+static VALUE
+overflow_coerce(VALUE self, VALUE other)
+{
+	return rb_assoc_new(self, overflow_to_i(other));
+}
+
+static VALUE
+overflow_cmp(VALUE self, VALUE other)
+{
+	VALUE i;
+
+	if (self == other) return 0;
+
+	if (FIXNUM_P(other)) {
+		i = overflow_to_i(self);
+		if (i == other) return INT2FIX(0);
+		if (FIXNUM_P(i)) {
+			if (FIX2LONG(i) < FIX2LONG(other)) {
+				return INT2FIX(-1);
+			} else {
+				return INT2FIX(1);
+			}
+		} else {
+		}
+	} else if (BIGNUM_P(other)) {
+		return rb_big_cmp(rb);
+	}
 }
 
 #define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
@@ -377,10 +407,16 @@ Init_overflow(void)
 {
 	VALUE cOverflow;
 
-	cOverflow = rb_define_class("Overflow", rb_cObject);
+	cOverflow = rb_define_class("Overflow", rb_cNumeric);
+	rb_define_const(cOverflow, "VERSION", rb_str_new2("0.0.1"));
 	rb_define_alloc_func(cOverflow, overflow_alloc);
 	rb_define_method(cOverflow, "initialize", overflow_initialize, -1);
 	rb_define_method(cOverflow, "initialize_copy", overflow_initialize_copy, 1);
+
+	/* override on Numeric */
+	rb_define_method(cOverflow, "coerce", overflow_coerce, 1);
+	// rb_define_method(cOverflow, "<=>", overflow_cmp, 1);
+
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
 
