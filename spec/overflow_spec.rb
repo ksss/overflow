@@ -8,7 +8,11 @@ describe Overflow do
     end
   end
 
-  it "set and to_i type 'c'" do
+  it "to_i" do
+    expect((Overflow.new "c").to_i).to eq(0)
+  end
+
+  it "set type 'c'" do
     over = Overflow.new "c"
     expect(over.set(0).to_i).to eq(0)
     expect(over.set(CHAR_MAX).to_i).to eq(CHAR_MAX)
@@ -18,7 +22,7 @@ describe Overflow do
     expect(over.set(UCHAR_MAX + 2).to_i).to eq(1)
   end
 
-  it "set and to_i type 's'" do
+  it "set type 's'" do
     over = Overflow.new "s"
     expect(over.set(SHRT_MAX).to_i).to eq(SHRT_MAX)
     expect(over.set(SHRT_MAX + 1).to_i).to eq(SHRT_MIN)
@@ -27,7 +31,7 @@ describe Overflow do
     expect(over.set(USHRT_MAX + 2).to_i).to eq(1)
   end
 
-  it "set and to_i type 'i'" do
+  it "set type 'i'" do
     over = Overflow.new "i"
     expect(over.set(INT_MAX).to_i).to eq(INT_MAX)
     expect(over.set(INT_MAX + 1).to_i).to eq(INT_MIN)
@@ -36,7 +40,7 @@ describe Overflow do
     expect(over.set(UINT_MAX + 2).to_i).to eq(1)
   end
 
-  it "set and to_i type 'q'" do
+  it "set type 'q'" do
     over = Overflow.new "q"
     expect(over.set(LLONG_MAX).to_i).to eq(LLONG_MAX)
     expect(over.set(LLONG_MAX + 1).to_i).to eq(LLONG_MIN)
@@ -295,6 +299,15 @@ describe Overflow do
     over = Overflow.new "Q", ULLONG_MAX
     over *= ULLONG_MAX
     expect(over.to_i).to eq(1)
+  end
+
+  it "/" do
+    over = Overflow.new "c", 5
+    clone = over.clone
+    expect(over / 2).to be_a_kind_of(Overflow)
+    expect((over / 2).to_i).to eq(2)
+    expect(over.to_i).to eq(clone.to_i)
+    expect((over / clone).to_i).to eq(1)
   end
 
   it "~" do

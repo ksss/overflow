@@ -64,6 +64,7 @@ overflow_initialize(int argc, VALUE *argv, VALUE self)
 	p = RSTRING_PTR(obj);
 
 	ptr->type = char2type(*p);
+	ptr->value = 0;
 	if (1 < argc) {
 		overflow_set(self, argv[1]);
 	}
@@ -144,7 +145,7 @@ overflow_to_i(VALUE self)
 	return Qnil;
 }
 
-#define OVERFLOW_TYPES_MULTI_MACRO(type, macro, a, b) do { \
+#define RETURN_SWITCH_MACRO(type, macro, a, b) do { \
 	switch (type) { \
 	case i8:   return macro(int8_t, a, b); \
 	case ui8:  return macro(uint8_t, a, b); \
@@ -165,16 +166,16 @@ pre_arithmetic(VALUE num)
 	} else if (RB_TYPE_P(num, T_BIGNUM)) {
 		return rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
 	} else { // self or other object
-		return rb_funcall(num, rb_intern("to_i"), 0);
+		return overflow_to_i(num);
 	}
 }
 
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
 
 static uint64_t
-plus(overflow_t *ptr, uint64_t b)
+iplus(overflow_t *ptr, uint64_t b)
 {
-	OVERFLOW_TYPES_MULTI_MACRO(ptr->type, TYPE_PLUS, ptr->value, b);
+	RETURN_SWITCH_MACRO(ptr->type, TYPE_PLUS, ptr->value, b);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return Qnil;
 }
@@ -190,16 +191,16 @@ overflow_plus(VALUE self, VALUE num)
 
 	b = NUM2ULL(pre_arithmetic(num));
 
-	ptr->value = plus(ptr, b);
+	ptr->value = iplus(ptr, b);
 	return clone;
 }
 
 #define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
 
 static uint64_t
-minus(overflow_t *ptr, uint64_t b)
+iminus(overflow_t *ptr, uint64_t b)
 {
-	OVERFLOW_TYPES_MULTI_MACRO(ptr->type, TYPE_MINUS, ptr->value, b);
+	RETURN_SWITCH_MACRO(ptr->type, TYPE_MINUS, ptr->value, b);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return 0;
 }
@@ -215,16 +216,16 @@ overflow_minus(VALUE self, VALUE num)
 
 	b = NUM2ULL(pre_arithmetic(num));
 
-	ptr->value = minus(ptr, b);
+	ptr->value = iminus(ptr, b);
 	return clone;
 }
 
 #define TYPE_MUL(type, value, other) ((type)((type)(value) * (type)(other)))
 
 static uint64_t
-mul(overflow_t *ptr, uint64_t b)
+imul(overflow_t *ptr, uint64_t b)
 {
-	OVERFLOW_TYPES_MULTI_MACRO(ptr->type, TYPE_MUL, ptr->value, b);
+	RETURN_SWITCH_MACRO(ptr->type, TYPE_MUL, ptr->value, b);
 	rb_raise(rb_eRuntimeError, "undefined type seted");
 	return 0;
 }
@@ -240,7 +241,32 @@ overflow_mul(VALUE self, VALUE num)
 
 	b = NUM2ULL(pre_arithmetic(num));
 
-	ptr->value = mul(ptr, b);
+	ptr->value = imul(ptr, b);
+	return clone;
+}
+
+#define TYPE_DIV(type, value, other) ((type)((type)(value) / (type)(other)))
+
+static uint64_t
+idiv(overflow_t *ptr, uint64_t b)
+{
+	RETURN_SWITCH_MACRO(ptr->type, TYPE_DIV, ptr->value, b);
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return 0;
+}
+
+static VALUE
+overflow_div(VALUE self, VALUE num)
+{
+	uint64_t b;
+	overflow_t *ptr;
+	VALUE clone = rb_obj_clone(self);
+
+	Data_Get_Struct(clone, overflow_t, ptr);
+
+	b = NUM2ULL(pre_arithmetic(num));
+
+	ptr->value = idiv(ptr, b);
 	return clone;
 }
 
@@ -350,15 +376,18 @@ void
 Init_overflow(void)
 {
 	VALUE cOverflow;
+
 	cOverflow = rb_define_class("Overflow", rb_cObject);
 	rb_define_alloc_func(cOverflow, overflow_alloc);
 	rb_define_method(cOverflow, "initialize", overflow_initialize, -1);
 	rb_define_method(cOverflow, "initialize_copy", overflow_initialize_copy, 1);
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
+
 	rb_define_method(cOverflow, "+", overflow_plus, 1);
 	rb_define_method(cOverflow, "-", overflow_minus, 1);
 	rb_define_method(cOverflow, "*", overflow_mul, 1);
+	rb_define_method(cOverflow, "/", overflow_div, 1);
 
 	rb_define_method(cOverflow, "~", overflow_rev, 0);
 	rb_define_method(cOverflow, "&", overflow_and, 1);
