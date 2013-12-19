@@ -156,6 +156,20 @@ overflow_eql(VALUE self, VALUE other)
 	return Qtrue;
 }
 
+static VALUE
+overflow_to_f(VALUE self)
+{
+	return DBL2NUM((double)FIX2LONG(overflow_to_i(self)));
+}
+
+static VALUE
+overflow_modulo(VALUE self, VALUE other)
+{
+	return rb_funcall(overflow_to_i(self), '-', 1,
+			rb_funcall(other, '*', 1,
+				rb_funcall(overflow_to_i(self), rb_intern("div"), 1, other)));
+}
+
 #define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
 	switch (ptr->type) { \
 	case i8:   ptr->value = (int8_t)   callback; break; \
@@ -228,13 +242,16 @@ overflow_to_i(VALUE self)
 static inline VALUE
 pre_arithmetic(VALUE num)
 {
-	if (RB_TYPE_P(num, T_FIXNUM)) {
+	switch (rb_type(num)) {
+	case T_FIXNUM:
 		return num;
-	} else if (RB_TYPE_P(num, T_BIGNUM)) {
+	case T_BIGNUM:
 		return rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	} else { // self or other object
+	case T_DATA: // self
 		return overflow_to_i(num);
 	}
+	rb_raise(rb_eArgError, "cannot arithmetic");
+	return Qnil;
 }
 
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
@@ -455,6 +472,9 @@ Init_overflow(void)
 	rb_define_method(cOverflow, "<=>", overflow_cmp, 1);
 	rb_define_method(cOverflow, "hash", overflow_hash, 0);
 	rb_define_method(cOverflow, "eql?", overflow_eql, 1);
+	rb_define_method(cOverflow, "to_f", overflow_to_f, 0);
+	rb_define_method(cOverflow, "%", overflow_modulo, 1);
+	rb_define_method(cOverflow, "modulo", overflow_modulo, 1);
 
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);

@@ -53,6 +53,14 @@ describe Overflow do
     expect(a.hash == b.hash).to be true
     expect(a.hash == c.hash).to be false
     expect(a.hash == d.hash).to be false
+
+    ary = []
+    hash = {}
+    100.times { ary << c *= 3 }
+    ary.each_with_index {|x, i| hash[x] = i}
+    ary.each_with_index do |x, i|
+      expect(hash[x]).to eq(i)
+    end
   end
 
   it "eql?" do
@@ -67,6 +75,41 @@ describe Overflow do
     expect(a.eql?(d)).to be false
     expect(fix.eql?(a)).to be false
   end
+
+  it "to_f" do
+    a = Overflow.new "c", 10
+    expect(a.to_f).to eq(10.0)
+  end
+
+  it "fdiv" do
+    a = Overflow.new "c", 10
+    expect(a.fdiv(2)).to eq(5.0)
+  end
+
+  it "div" do
+    a = Overflow.new "c", 10
+    expect(a.div(3)).to eq(3)
+  end
+
+  it "divmod" do
+    a = Overflow.new "c", 10
+    expect(a.divmod(3)).to eq([3, 1])
+  end
+
+  it "modulo" do
+    a = Overflow.new "c", 10
+    expect(a.modulo(3)).to eq(1)
+    expect(a % 3).to eq(1)
+  end
+
+  it "remainder" do
+    a = Overflow.new "c", 13
+    expect(a.remainder(4)).to eq(1)
+    expect(a.remainder(4.25)).to eq(0.25)
+  end
+
+  it "floor" do
+    a = Overflow.new "c", 10
+    expect(a.floor).to eq(10)
+  end
 end
-
-
