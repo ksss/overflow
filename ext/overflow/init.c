@@ -12,8 +12,8 @@ typedef enum {
 } types;
 
 typedef struct {
-	uint64_t value;
 	types type;
+	uint64_t value;
 } overflow_t;
 
 static VALUE overflow_set(VALUE self, VALUE obj);
@@ -93,7 +93,10 @@ overflow_initialize_copy(VALUE copy, VALUE origin)
 static VALUE
 overflow_coerce(VALUE self, VALUE other)
 {
-	return rb_assoc_new(self, overflow_to_i(other));
+	if (CLASS_OF(self) == CLASS_OF(other)) {
+		return rb_assoc_new(overflow_to_i(other), overflow_to_i(self));
+	}
+	return rb_assoc_new(other, overflow_to_i(self));
 }
 
 static VALUE
@@ -103,20 +106,54 @@ overflow_cmp(VALUE self, VALUE other)
 
 	if (self == other) return 0;
 
-	if (FIXNUM_P(other)) {
-		i = overflow_to_i(self);
-		if (i == other) return INT2FIX(0);
-		if (FIXNUM_P(i)) {
+	i = overflow_to_i(self);
+	if (i == other) return INT2FIX(0);
+
+	if (FIXNUM_P(i)) {
+		if (FIXNUM_P(other)) {
 			if (FIX2LONG(i) < FIX2LONG(other)) {
 				return INT2FIX(-1);
 			} else {
 				return INT2FIX(1);
 			}
-		} else {
+		} else if (RB_TYPE_P(other, T_BIGNUM)) {
+			return rb_big_cmp(rb_int2big(FIX2LONG(i)), other);
 		}
-	} else if (BIGNUM_P(other)) {
-		return rb_big_cmp(rb);
+	} else if (RB_TYPE_P(i, T_BIGNUM)) {
+		return rb_big_cmp(i, other);
 	}
+	return rb_num_coerce_cmp(self, other, rb_intern("<=>"));
+}
+
+static VALUE
+overflow_hash(VALUE self)
+{
+	st_index_t h[2];
+	overflow_t *ptr;
+	Data_Get_Struct(self, overflow_t, ptr);
+	h[0] = NUM2LONG(rb_hash(INT2FIX(ptr->type)));
+	h[1] = NUM2LONG(rb_hash(overflow_to_i(self)));
+	return LONG2FIX(rb_memhash(h, sizeof(h)));
+}
+
+static VALUE
+overflow_eql(VALUE self, VALUE other)
+{
+	overflow_t *ptr_self;
+	overflow_t *ptr_other;
+
+	if (TYPE(other) != T_DATA) {
+		return Qfalse;
+	}
+	Data_Get_Struct(self, overflow_t, ptr_self);
+	Data_Get_Struct(other, overflow_t, ptr_other);
+	if (ptr_self->type != ptr_other->type) {
+		return Qfalse;
+	}
+	if (ptr_self->value != ptr_other->value) {
+		return Qfalse;
+	}
+	return Qtrue;
 }
 
 #define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
@@ -415,7 +452,9 @@ Init_overflow(void)
 
 	/* override on Numeric */
 	rb_define_method(cOverflow, "coerce", overflow_coerce, 1);
-	// rb_define_method(cOverflow, "<=>", overflow_cmp, 1);
+	rb_define_method(cOverflow, "<=>", overflow_cmp, 1);
+	rb_define_method(cOverflow, "hash", overflow_hash, 0);
+	rb_define_method(cOverflow, "eql?", overflow_eql, 1);
 
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
