@@ -38,17 +38,11 @@ types char2type (char c)
 	}
 }
 
-static void
-overflow_free(overflow_t* ptr)
-{
-	xfree(ptr);
-}
-
 static VALUE
 overflow_alloc(VALUE self)
 {
 	overflow_t* ptr = ALLOC(overflow_t);
-	return Data_Wrap_Struct(self, 0, overflow_free, ptr);
+	return Data_Wrap_Struct(self, 0, -1, ptr);
 }
 
 static VALUE
