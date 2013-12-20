@@ -25,14 +25,16 @@ p (200 - over) #=> -40 (Call Overflow#coerce.)
 
 **type**: defined C type
 
+All type mean same that pack template.
+
 - c: `int8_t`
 - C: `uint8_t`
 - s: `int16_t`
 - S: `uint16_t`
-- i: `int32_t`
-- I: `uint32_t`
-- l: `int32_t` same at "i"
-- L: `uint32_t` same at "I"
+- i: `int`
+- I: `unsigned int`
+- l: `int32_t`
+- L: `uint32_t`
 - q: `int64_t`
 - Q: `uint64_t`
 
