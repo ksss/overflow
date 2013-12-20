@@ -5,6 +5,8 @@ typedef enum {
 	ui8,
 	i16,
 	ui16,
+	int_t,
+	uint_t,
 	i32,
 	ui32,
 	i64,
@@ -17,8 +19,6 @@ typedef struct {
 } overflow_t;
 
 static VALUE overflow_set(VALUE self, VALUE obj);
-static VALUE overflow_to_i(VALUE self);
-static VALUE overflow_plus(VALUE self, VALUE other);
 
 types char2type (char c)
 {
@@ -27,8 +27,8 @@ types char2type (char c)
 	case 'C': return ui8;
 	case 's': return i16;
 	case 'S': return ui16;
-	case 'i': return i32;
-	case 'I': return ui32;
+	case 'i': return int_t;
+	case 'I': return uint_t;
 	case 'l': return i32;
 	case 'L': return ui32;
 	case 'q': return i64;
@@ -89,6 +89,28 @@ overflow_initialize_copy(VALUE copy, VALUE origin)
 	ptr_copy->type  = ptr_origin->type;
 
 	return copy;
+}
+
+static VALUE
+overflow_to_i(VALUE self)
+{
+	overflow_t *ptr;
+	Data_Get_Struct(self, overflow_t, ptr);
+
+	switch (ptr->type) {
+	case i8:     return INT2NUM((int8_t)ptr->value);
+	case ui8:    return UINT2NUM((uint8_t)ptr->value);
+	case i16:    return INT2NUM((int16_t)ptr->value);
+	case ui16:   return UINT2NUM((uint16_t)ptr->value);
+	case int_t:  return LONG2NUM((int)ptr->value);
+	case uint_t: return ULONG2NUM((unsigned int)ptr->value);
+	case i32:    return LONG2NUM((int32_t)ptr->value);
+	case ui32:   return ULONG2NUM((uint32_t)ptr->value);
+	case i64:    return LL2NUM((int64_t)ptr->value);
+	case ui64:   return ULL2NUM((uint64_t)ptr->value);
+	}
+	rb_raise(rb_eRuntimeError, "undefined type seted");
+	return Qnil;
 }
 
 static VALUE
@@ -179,14 +201,16 @@ overflow_int_p(VALUE self)
 
 #define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
 	switch (ptr->type) { \
-	case i8:   ptr->value = (int8_t)   callback; break; \
-	case ui8:  ptr->value = (uint8_t)  callback; break; \
-	case i16:  ptr->value = (int16_t)  callback; break; \
-	case ui16: ptr->value = (uint16_t) callback; break; \
-	case i32:  ptr->value = (int32_t)  callback; break; \
-	case ui32: ptr->value = (uint32_t) callback; break; \
-	case i64:  ptr->value = (int64_t)  callback; break; \
-	case ui64: ptr->value = (uint64_t) callback; break; \
+	case i8:     ptr->value = (int8_t)       callback; break; \
+	case ui8:    ptr->value = (uint8_t)      callback; break; \
+	case i16:    ptr->value = (int16_t)      callback; break; \
+	case ui16:   ptr->value = (uint16_t)     callback; break; \
+	case int_t:  ptr->value = (int)          callback; break; \
+	case uint_t: ptr->value = (unsigned int) callback; break; \
+	case i32:    ptr->value = (int32_t)      callback; break; \
+	case ui32:   ptr->value = (uint32_t)     callback; break; \
+	case i64:    ptr->value = (int64_t)      callback; break; \
+	case ui64:   ptr->value = (uint64_t)     callback; break; \
 	} \
 } while(0)
 
@@ -213,36 +237,18 @@ overflow_set(VALUE self, VALUE obj)
 	return self;
 }
 
-static VALUE
-overflow_to_i(VALUE self)
-{
-	overflow_t *ptr;
-	Data_Get_Struct(self, overflow_t, ptr);
-
-	switch (ptr->type) {
-	case i8:   return INT2NUM((int8_t)ptr->value);
-	case ui8:  return UINT2NUM((uint8_t)ptr->value);
-	case i16:  return INT2NUM((int16_t)ptr->value);
-	case ui16: return UINT2NUM((uint16_t)ptr->value);
-	case i32:  return LONG2NUM((int32_t)ptr->value);
-	case ui32: return ULONG2NUM((uint32_t)ptr->value);
-	case i64:  return LL2NUM((int64_t)ptr->value);
-	case ui64: return ULL2NUM((uint64_t)ptr->value);
-	}
-	rb_raise(rb_eRuntimeError, "undefined type seted");
-	return Qnil;
-}
-
 #define RETURN_SWITCH_MACRO(type, macro, a, b) do { \
 	switch (type) { \
-	case i8:   return macro(int8_t, a, b); \
-	case ui8:  return macro(uint8_t, a, b); \
-	case i16:  return macro(int16_t, a, b); \
-	case ui16: return macro(uint16_t, a, b); \
-	case i32:  return macro(int32_t, a, b); \
-	case ui32: return macro(uint32_t, a, b); \
-	case i64:  return macro(int64_t, a, b); \
-	case ui64: return macro(uint64_t, a, b); \
+	case i8:     return macro(int8_t, a, b); \
+	case ui8:    return macro(uint8_t, a, b); \
+	case i16:    return macro(int16_t, a, b); \
+	case ui16:   return macro(uint16_t, a, b); \
+	case int_t:  return macro(int, a, b); \
+	case uint_t: return macro(unsigned int, a, b); \
+	case i32:    return macro(int32_t, a, b); \
+	case ui32:   return macro(uint32_t, a, b); \
+	case i64:    return macro(int64_t, a, b); \
+	case ui64:   return macro(uint64_t, a, b); \
 	} \
 } while(0)
 
@@ -426,11 +432,9 @@ overflow_lshift(VALUE self, VALUE obj)
 	Data_Get_Struct(clone, overflow_t, ptr);
 
 	if (!FIXNUM_P(obj))
-		rb_raise(rb_eArgError, "over 64 left shift not support");
+		rb_raise(rb_eArgError, "too big shift not support");
 
 	width = FIX2LONG(obj);
-	if (64 <= width)
-		rb_raise(rb_eArgError, "over 64 left shift not support");
 
 	if (width < 0) {
 		rshift(ptr, -width);
@@ -449,11 +453,9 @@ overflow_rshift(VALUE self, VALUE obj)
 	Data_Get_Struct(clone, overflow_t, ptr);
 
 	if (!FIXNUM_P(obj))
-		rb_raise(rb_eArgError, "over 64 right shift not support");
+		rb_raise(rb_eArgError, "too big shift not support");
 
 	width = FIX2LONG(obj);
-	if (64 <= width)
-		rb_raise(rb_eArgError, "over 64 right shift not support");
 
 	if (width < 0) {
 		lshift(ptr, -width);
