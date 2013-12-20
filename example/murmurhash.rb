@@ -40,4 +40,5 @@ def murmur_hash str
   h.to_i
 end
 
-p murmur_hash "murmur" #=> 2800467524
+# p murmur_hash "murmur" #=> 2800467524
+puts murmur_hash ARGV[0]
