@@ -231,21 +231,6 @@ overflow_set(VALUE self, VALUE obj)
 	return self;
 }
 
-#define RETURN_SWITCH_MACRO(type, macro, a, b) do { \
-	switch (type) { \
-	case i8:   return macro(int8_t, a, b); \
-	case ui8:  return macro(uint8_t, a, b); \
-	case i16:  return macro(int16_t, a, b); \
-	case ui16: return macro(uint16_t, a, b); \
-	case in:   return macro(int, a, b); \
-	case uin:  return macro(unsigned int, a, b); \
-	case i32:  return macro(int32_t, a, b); \
-	case ui32: return macro(uint32_t, a, b); \
-	case i64:  return macro(int64_t, a, b); \
-	case ui64: return macro(uint64_t, a, b); \
-	} \
-} while(0)
-
 static inline VALUE
 pre_arithmetic(VALUE num)
 {
@@ -261,104 +246,76 @@ pre_arithmetic(VALUE num)
 	return Qnil;
 }
 
-#define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
+#define TYPE_PLUS(type, value, other)  ((type)((type)(value) + (type)(other)))
+#define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
+#define TYPE_MUL(type, value, other)   ((type)((type)(value) * (type)(other)))
+#define TYPE_DIV(type, value, other)   ((type)((type)(value) / (type)(other)))
 
-static uint64_t
-iplus(overflow_t *ptr, uint64_t b)
+#define SWITCH_MACRO(type, macro, a, b) do { \
+	switch (type) { \
+	case i8:   a = macro(int8_t, a, b); break; \
+	case ui8:  a = macro(uint8_t, a, b); break; \
+	case i16:  a = macro(int16_t, a, b); break; \
+	case ui16: a = macro(uint16_t, a, b); break; \
+	case in:   a = macro(int, a, b); break; \
+	case uin:  a = macro(unsigned int, a, b); break; \
+	case i32:  a = macro(int32_t, a, b); break; \
+	case ui32: a = macro(uint32_t, a, b); break; \
+	case i64:  a = macro(int64_t, a, b); break; \
+	case ui64: a = macro(uint64_t, a, b); break; \
+	} \
+} while(0)
+
+static inline VALUE
+overflow_arithmetic(VALUE self, char method, VALUE other)
 {
-	RETURN_SWITCH_MACRO(ptr->type, TYPE_PLUS, ptr->value, b);
-	rb_raise(rb_eRuntimeError, "undefined type seted");
-	return Qnil;
+	uint64_t b;
+	overflow_t *ptr;
+	VALUE clone = rb_obj_clone(self);
+
+	Data_Get_Struct(clone, overflow_t, ptr);
+
+	b = NUM2ULL(pre_arithmetic(other));
+
+	switch (method) {
+	case '+':
+		SWITCH_MACRO(ptr->type, TYPE_PLUS, ptr->value, b);
+		break;
+	case '-':
+		SWITCH_MACRO(ptr->type, TYPE_MINUS, ptr->value, b);
+		break;
+	case '*':
+		SWITCH_MACRO(ptr->type, TYPE_MUL, ptr->value, b);
+		break;
+	case '/':
+		SWITCH_MACRO(ptr->type, TYPE_DIV, ptr->value, b);
+		break;
+	}
+	return clone;
 }
 
 static VALUE
 overflow_plus(VALUE self, VALUE num)
 {
-	uint64_t b;
-	overflow_t *ptr;
-	VALUE clone = rb_obj_clone(self);
-
-	Data_Get_Struct(clone, overflow_t, ptr);
-
-	b = NUM2ULL(pre_arithmetic(num));
-
-	ptr->value = iplus(ptr, b);
-	return clone;
-}
-
-#define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
-
-static uint64_t
-iminus(overflow_t *ptr, uint64_t b)
-{
-	RETURN_SWITCH_MACRO(ptr->type, TYPE_MINUS, ptr->value, b);
-	rb_raise(rb_eRuntimeError, "undefined type seted");
-	return 0;
+	return overflow_arithmetic(self, '+', num);
 }
 
 static VALUE
 overflow_minus(VALUE self, VALUE num)
 {
-	uint64_t b;
-	overflow_t *ptr;
-	VALUE clone = rb_obj_clone(self);
-
-	Data_Get_Struct(clone, overflow_t, ptr);
-
-	b = NUM2ULL(pre_arithmetic(num));
-
-	ptr->value = iminus(ptr, b);
-	return clone;
-}
-
-#define TYPE_MUL(type, value, other) ((type)((type)(value) * (type)(other)))
-
-static uint64_t
-imul(overflow_t *ptr, uint64_t b)
-{
-	RETURN_SWITCH_MACRO(ptr->type, TYPE_MUL, ptr->value, b);
-	rb_raise(rb_eRuntimeError, "undefined type seted");
-	return 0;
+	return overflow_arithmetic(self, '-', num);
 }
 
 static VALUE
 overflow_mul(VALUE self, VALUE num)
 {
-	uint64_t b;
-	overflow_t *ptr;
-	VALUE clone = rb_obj_clone(self);
-
-	Data_Get_Struct(clone, overflow_t, ptr);
-
-	b = NUM2ULL(pre_arithmetic(num));
-
-	ptr->value = imul(ptr, b);
-	return clone;
-}
-
-#define TYPE_DIV(type, value, other) ((type)((type)(value) / (type)(other)))
-
-static uint64_t
-idiv(overflow_t *ptr, uint64_t b)
-{
-	RETURN_SWITCH_MACRO(ptr->type, TYPE_DIV, ptr->value, b);
-	rb_raise(rb_eRuntimeError, "undefined type seted");
-	return 0;
+	return overflow_arithmetic(self, '*', num);
 }
 
 static VALUE
 overflow_div(VALUE self, VALUE num)
 {
-	uint64_t b;
-	overflow_t *ptr;
-	VALUE clone = rb_obj_clone(self);
-
-	Data_Get_Struct(clone, overflow_t, ptr);
-
-	b = NUM2ULL(pre_arithmetic(num));
-
-	ptr->value = idiv(ptr, b);
-	return clone;
+	return overflow_arithmetic(self, '/', num);
 }
 
 static VALUE
