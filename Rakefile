@@ -18,4 +18,4 @@ Rake::ExtensionTask.new('overflow', spec) do |ext|
 end
 
 
-task :default => [:spec]
+task :default => [:spec, :build]
