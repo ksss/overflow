@@ -16,6 +16,7 @@ p over.to_i #=> 255 (out Fixnum object)
 over = over << 4 #=> left bit shift (0b11110000)
 p over.to_i #=> 240 (overflow bit is dropped)
 p (over >> 4).to_i #=> 15 (0b00001111)
+p (200 - over) #=> -40 (Call Overflow#coerce.)
 ```
 
 ## APIs
@@ -78,6 +79,12 @@ over = Overflow.new "C", 0xff
 over << 4 #=> 0xf0
 over >> 4 #=> 0x0f
 ```
+
+and all `Numeric` methods.
+
+## Class tree
+
+Overflow < Numeric
 
 ## Installation
 
