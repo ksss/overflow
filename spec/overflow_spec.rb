@@ -40,6 +40,16 @@ describe Overflow do
     expect(over.set(UINT_MAX + 2).to_i).to eq(1)
   end
 
+  # FIXME write test
+  # it "set type 'l'" do
+  #   over = Overflow.new "l"
+  #   expect(over.set(INT_MAX).to_i).to eq(INT_MAX)
+  #   expect(over.set(INT_MAX + 1).to_i).to eq(INT_MIN)
+  #   expect(over.set(UINT_MAX).to_i).to eq(-1)
+  #   expect(over.set(UINT_MAX + 1).to_i).to eq(0)
+  #   expect(over.set(UINT_MAX + 2).to_i).to eq(1)
+  # end
+
   it "set type 'q'" do
     over = Overflow.new "q"
     expect(over.set(LLONG_MAX).to_i).to eq(LLONG_MAX)
