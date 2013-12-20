@@ -108,8 +108,60 @@ describe Overflow do
     expect(a.remainder(4.25)).to eq(0.25)
   end
 
+  it "abs" do
+    a = Overflow.new "c", -10
+    b = Overflow.new "c", 10
+    expect(a.abs).to eq(10)
+    expect(a.magnitude).to eq(10)
+    expect(b.abs).to eq(10)
+  end
+
+  it "to_int" do
+    a = Overflow.new "c", 10
+    expect(a.to_int).to eq(10)
+  end
+
+  it "real?" do
+    a = Overflow.new "c", 10
+    expect(a.real?).to be true
+  end
+
+  it "integer?" do
+    a = Overflow.new "c", 10
+    expect(a.integer?).to be true
+  end
+
+  it "zero?" do
+    a = Overflow.new "c", 0
+    b = Overflow.new "c", 10
+    expect(a.zero?).to be true
+    expect(b.zero?).to be false
+  end
+
+  it "nonzero?" do
+    a = Overflow.new "c", 0
+    b = Overflow.new "c", 10
+    expect(a.nonzero?).to be nil
+    expect(b.nonzero?).to eq(b)
+  end
+
   it "floor" do
     a = Overflow.new "c", 10
     expect(a.floor).to eq(10)
+  end
+
+  it "ceil" do
+    a = Overflow.new "c", 10
+    expect(a.ceil).to eq(10)
+  end
+
+  it "round" do
+    a = Overflow.new "c", 10
+    expect(a.round).to eq(10)
+  end
+
+  it "truncate" do
+    a = Overflow.new "c", 10
+    expect(a.truncate).to eq(10)
   end
 end

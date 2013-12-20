@@ -18,6 +18,7 @@ typedef struct {
 
 static VALUE overflow_set(VALUE self, VALUE obj);
 static VALUE overflow_to_i(VALUE self);
+static VALUE overflow_plus(VALUE self, VALUE other);
 
 types char2type (char c)
 {
@@ -168,6 +169,12 @@ overflow_modulo(VALUE self, VALUE other)
 	return rb_funcall(overflow_to_i(self), '-', 1,
 			rb_funcall(other, '*', 1,
 				rb_funcall(overflow_to_i(self), rb_intern("div"), 1, other)));
+}
+
+static VALUE
+overflow_int_p(VALUE self)
+{
+	return Qtrue;
 }
 
 #define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
@@ -475,6 +482,8 @@ Init_overflow(void)
 	rb_define_method(cOverflow, "to_f", overflow_to_f, 0);
 	rb_define_method(cOverflow, "%", overflow_modulo, 1);
 	rb_define_method(cOverflow, "modulo", overflow_modulo, 1);
+	rb_define_method(cOverflow, "integer?", overflow_int_p, 0);
+	// rb_define_method(cOverflow, "step", overflow_step, -1);
 
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
