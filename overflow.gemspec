@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "overflow"
-  spec.version       = "0.0.1"
+  spec.version       = "0.1.0"
   spec.author        = "ksss"
   spec.email         = "co000ri@gmail.com"
   spec.description   = %q{Overflow is a class to overflow calculated as C language in Ruby.}
