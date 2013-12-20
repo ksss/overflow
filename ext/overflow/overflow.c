@@ -1,5 +1,40 @@
 #include "ruby.h"
 
+#define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
+	switch (ptr->type) { \
+	case i8:   ptr->value = (int8_t)       callback; break; \
+	case ui8:  ptr->value = (uint8_t)      callback; break; \
+	case i16:  ptr->value = (int16_t)      callback; break; \
+	case ui16: ptr->value = (uint16_t)     callback; break; \
+	case in:   ptr->value = (int)          callback; break; \
+	case uin:  ptr->value = (unsigned int) callback; break; \
+	case i32:  ptr->value = (int32_t)      callback; break; \
+	case ui32: ptr->value = (uint32_t)     callback; break; \
+	case i64:  ptr->value = (int64_t)      callback; break; \
+	case ui64: ptr->value = (uint64_t)     callback; break; \
+	} \
+} while(0)
+
+#define TYPE_PLUS(type, value, other)  ((type)((type)(value) + (type)(other)))
+#define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
+#define TYPE_MUL(type, value, other)   ((type)((type)(value) * (type)(other)))
+#define TYPE_DIV(type, value, other)   ((type)((type)(value) / (type)(other)))
+
+#define SWITCH_MACRO(type, macro, a, b) do { \
+	switch (type) { \
+	case i8:   a = macro(int8_t, a, b); break; \
+	case ui8:  a = macro(uint8_t, a, b); break; \
+	case i16:  a = macro(int16_t, a, b); break; \
+	case ui16: a = macro(uint16_t, a, b); break; \
+	case in:   a = macro(int, a, b); break; \
+	case uin:  a = macro(unsigned int, a, b); break; \
+	case i32:  a = macro(int32_t, a, b); break; \
+	case ui32: a = macro(uint32_t, a, b); break; \
+	case i64:  a = macro(int64_t, a, b); break; \
+	case ui64: a = macro(uint64_t, a, b); break; \
+	} \
+} while(0)
+
 typedef enum {
 	i8,
 	ui8,
@@ -193,21 +228,6 @@ overflow_int_p(VALUE self)
 	return Qtrue;
 }
 
-#define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
-	switch (ptr->type) { \
-	case i8:   ptr->value = (int8_t)       callback; break; \
-	case ui8:  ptr->value = (uint8_t)      callback; break; \
-	case i16:  ptr->value = (int16_t)      callback; break; \
-	case ui16: ptr->value = (uint16_t)     callback; break; \
-	case in:   ptr->value = (int)          callback; break; \
-	case uin:  ptr->value = (unsigned int) callback; break; \
-	case i32:  ptr->value = (int32_t)      callback; break; \
-	case ui32: ptr->value = (uint32_t)     callback; break; \
-	case i64:  ptr->value = (int64_t)      callback; break; \
-	case ui64: ptr->value = (uint64_t)     callback; break; \
-	} \
-} while(0)
-
 static VALUE
 overflow_set(VALUE self, VALUE obj)
 {
@@ -245,26 +265,6 @@ pre_arithmetic(VALUE num)
 	rb_raise(rb_eArgError, "cannot arithmetic");
 	return Qnil;
 }
-
-#define TYPE_PLUS(type, value, other)  ((type)((type)(value) + (type)(other)))
-#define TYPE_MINUS(type, value, other) ((type)((type)(value) - (type)(other)))
-#define TYPE_MUL(type, value, other)   ((type)((type)(value) * (type)(other)))
-#define TYPE_DIV(type, value, other)   ((type)((type)(value) / (type)(other)))
-
-#define SWITCH_MACRO(type, macro, a, b) do { \
-	switch (type) { \
-	case i8:   a = macro(int8_t, a, b); break; \
-	case ui8:  a = macro(uint8_t, a, b); break; \
-	case i16:  a = macro(int16_t, a, b); break; \
-	case ui16: a = macro(uint16_t, a, b); break; \
-	case in:   a = macro(int, a, b); break; \
-	case uin:  a = macro(unsigned int, a, b); break; \
-	case i32:  a = macro(int32_t, a, b); break; \
-	case ui32: a = macro(uint32_t, a, b); break; \
-	case i64:  a = macro(int64_t, a, b); break; \
-	case ui64: a = macro(uint64_t, a, b); break; \
-	} \
-} while(0)
 
 static inline VALUE
 overflow_arithmetic(VALUE self, char method, VALUE other)
@@ -436,7 +436,6 @@ Init_overflow(void)
 	rb_define_method(cOverflow, "%", overflow_modulo, 1);
 	rb_define_method(cOverflow, "modulo", overflow_modulo, 1);
 	rb_define_method(cOverflow, "integer?", overflow_int_p, 0);
-	// rb_define_method(cOverflow, "step", overflow_step, -1);
 
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
