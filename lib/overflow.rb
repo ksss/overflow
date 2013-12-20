@@ -3,4 +3,3 @@ begin
 rescue LoadError
   require "overflow/overflow"
 end
-require "overflow/version"

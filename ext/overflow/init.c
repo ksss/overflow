@@ -12,11 +12,13 @@ typedef enum {
 } types;
 
 typedef struct {
-	uint64_t value;
 	types type;
+	uint64_t value;
 } overflow_t;
 
 static VALUE overflow_set(VALUE self, VALUE obj);
+static VALUE overflow_to_i(VALUE self);
+static VALUE overflow_plus(VALUE self, VALUE other);
 
 types char2type (char c)
 {
@@ -87,6 +89,92 @@ overflow_initialize_copy(VALUE copy, VALUE origin)
 	ptr_copy->type  = ptr_origin->type;
 
 	return copy;
+}
+
+static VALUE
+overflow_coerce(VALUE self, VALUE other)
+{
+	if (CLASS_OF(self) == CLASS_OF(other)) {
+		return rb_assoc_new(overflow_to_i(other), overflow_to_i(self));
+	}
+	return rb_assoc_new(other, overflow_to_i(self));
+}
+
+static VALUE
+overflow_cmp(VALUE self, VALUE other)
+{
+	VALUE i;
+
+	if (self == other) return 0;
+
+	i = overflow_to_i(self);
+	if (i == other) return INT2FIX(0);
+
+	if (FIXNUM_P(i)) {
+		if (FIXNUM_P(other)) {
+			if (FIX2LONG(i) < FIX2LONG(other)) {
+				return INT2FIX(-1);
+			} else {
+				return INT2FIX(1);
+			}
+		} else if (RB_TYPE_P(other, T_BIGNUM)) {
+			return rb_big_cmp(rb_int2big(FIX2LONG(i)), other);
+		}
+	} else if (RB_TYPE_P(i, T_BIGNUM)) {
+		return rb_big_cmp(i, other);
+	}
+	return rb_num_coerce_cmp(self, other, rb_intern("<=>"));
+}
+
+static VALUE
+overflow_hash(VALUE self)
+{
+	st_index_t h[2];
+	overflow_t *ptr;
+	Data_Get_Struct(self, overflow_t, ptr);
+	h[0] = NUM2LONG(rb_hash(INT2FIX(ptr->type)));
+	h[1] = NUM2LONG(rb_hash(overflow_to_i(self)));
+	return LONG2FIX(rb_memhash(h, sizeof(h)));
+}
+
+static VALUE
+overflow_eql(VALUE self, VALUE other)
+{
+	overflow_t *ptr_self;
+	overflow_t *ptr_other;
+
+	if (TYPE(other) != T_DATA) {
+		return Qfalse;
+	}
+	Data_Get_Struct(self, overflow_t, ptr_self);
+	Data_Get_Struct(other, overflow_t, ptr_other);
+	if (ptr_self->type != ptr_other->type) {
+		return Qfalse;
+	}
+	if (ptr_self->value != ptr_other->value) {
+		return Qfalse;
+	}
+	return Qtrue;
+}
+
+static VALUE
+overflow_to_f(VALUE self)
+{
+	return DBL2NUM((double)FIX2LONG(overflow_to_i(self)));
+}
+
+static VALUE
+overflow_modulo(VALUE self, VALUE other)
+{
+	return rb_funcall(overflow_to_i(self), '-', 1,
+			rb_funcall(other, '*', 1,
+				rb_funcall(overflow_to_i(self), rb_intern("div"), 1, other)));
+}
+
+static VALUE
+overflow_int_p(VALUE self)
+{
+	return Qtrue;
 }
 
 #define OVERFLOW_TYPES_ALL_CASE(ptr, callback) do { \
@@ -161,13 +249,16 @@ overflow_to_i(VALUE self)
 static inline VALUE
 pre_arithmetic(VALUE num)
 {
-	if (RB_TYPE_P(num, T_FIXNUM)) {
+	switch (rb_type(num)) {
+	case T_FIXNUM:
 		return num;
-	} else if (RB_TYPE_P(num, T_BIGNUM)) {
+	case T_BIGNUM:
 		return rb_funcall(num, rb_intern("&"), 1, ULL2NUM(0xffffffffffffffffLL));
-	} else { // self or other object
+	case T_DATA: // self
 		return overflow_to_i(num);
 	}
+	rb_raise(rb_eArgError, "cannot arithmetic");
+	return Qnil;
 }
 
 #define TYPE_PLUS(type, value, other) ((type)((type)(value) + (type)(other)))
@@ -377,10 +468,23 @@ Init_overflow(void)
 {
 	VALUE cOverflow;
 
-	cOverflow = rb_define_class("Overflow", rb_cObject);
+	cOverflow = rb_define_class("Overflow", rb_cNumeric);
+	rb_define_const(cOverflow, "VERSION", rb_str_new2("0.0.1"));
 	rb_define_alloc_func(cOverflow, overflow_alloc);
 	rb_define_method(cOverflow, "initialize", overflow_initialize, -1);
 	rb_define_method(cOverflow, "initialize_copy", overflow_initialize_copy, 1);
+
+	/* override on Numeric */
+	rb_define_method(cOverflow, "coerce", overflow_coerce, 1);
+	rb_define_method(cOverflow, "<=>", overflow_cmp, 1);
+	rb_define_method(cOverflow, "hash", overflow_hash, 0);
+	rb_define_method(cOverflow, "eql?", overflow_eql, 1);
+	rb_define_method(cOverflow, "to_f", overflow_to_f, 0);
+	rb_define_method(cOverflow, "%", overflow_modulo, 1);
+	rb_define_method(cOverflow, "modulo", overflow_modulo, 1);
+	rb_define_method(cOverflow, "integer?", overflow_int_p, 0);
+	// rb_define_method(cOverflow, "step", overflow_step, -1);
+
 	rb_define_method(cOverflow, "set", overflow_set, 1);
 	rb_define_method(cOverflow, "to_i", overflow_to_i, 0);
 

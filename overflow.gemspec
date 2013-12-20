@@ -1,11 +1,10 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'overflow/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "overflow"
-  spec.version       = Overflow::VERSION
+  spec.version       = "0.0.1"
   spec.author        = "ksss"
   spec.email         = "co000ri@gmail.com"
   spec.description   = %q{Overflow is a class to overflow calculated as C language in Ruby.}
